@@ -7,22 +7,23 @@ const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); // State for error messages
+  const [error, setError] = useState('');
 
   const handleAuthAction = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
     try {
+      let authError;
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        alert('Success! Please check your email for a verification link to activate your account.');
+        authError = error;
+        if (!authError) alert('Success! Please check your email for a verification link.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        // Redirection is now handled by the listener in App.jsx
+        authError = error;
       }
+      if (authError) throw authError;
     } catch (error) {
       setError(error.error_description || error.message);
     } finally {
@@ -41,9 +42,8 @@ const AuthPage = () => {
             </p>
         </div>
         
-        {/* Error Display */}
         {error && (
-            <div className="px-4 py-3 text-center text-red-700 bg-red-100 border border-red-400 rounded-lg">
+            <div className="p-4 text-center text-red-700 bg-red-100 border-l-4 border-red-500 rounded-lg">
                 <p>{error}</p>
             </div>
         )}

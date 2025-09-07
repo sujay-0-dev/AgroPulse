@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 import LandingPage from './pages/LandingPage';
-import AuthPage from './pages/AuthPage';
+import AuthPage from './pages/AuthPage'; // Correctly imports AuthPage
 import AppLayout from './pages/AppLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -13,16 +13,18 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        navigate('/app'); // Redirect to app on successful login/signup
-      }
-    });
-    
     supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        navigate('/app');
+      } else {
+        navigate('/auth');
+      }
     });
 
     return () => subscription.unsubscribe();
