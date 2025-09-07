@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 import LandingPage from './pages/LandingPage';
@@ -10,30 +10,32 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setLoading(false);
+      if (session) {
+        navigate('/app'); // Redirect to app on successful login/signup
+      }
     });
     
-    // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
-      return <div></div>; // Return a blank div or a spinner while checking session
+      return <div className="min-h-screen bg-green-50"></div>;
   }
 
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<AuthPage />} />
+      <Route path="/auth" element={<AuthPage />} />
       <Route 
         path="/app" 
         element={

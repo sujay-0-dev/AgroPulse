@@ -1,58 +1,74 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
-import Dashboard from '../components/Dashboard';
-import MyFarm from '../components/MyFarm';
+import { Link } from 'react-router-dom';
 
-const AppLayout = ({ session }) => {
-  const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState('myFarm');
-  
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+const AuthPage = () => {
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(''); // State for error messages
+
+  const handleAuthAction = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(''); // Clear previous errors
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        alert('Success! Please check your email for a verification link to activate your account.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        // Redirection is now handled by the listener in App.jsx
+      }
+    } catch (error) {
+      setError(error.error_description || error.message);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleHelp = () => {
-      // In a real app, this would trigger the Web Speech API
-      // to listen for a user's voice command.
-      alert("Help feature coming soon! You will be able to ask questions with your voice.");
-  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-       <header className="flex items-center justify-between p-4 bg-white shadow-md">
-         <h1 className="text-xl font-bold text-green-600">🌾 AgroPulse Dashboard</h1>
-         <button onClick={handleLogout} className="flex items-center space-x-2 text-sm text-red-500 hover:text-red-700">
-           <span>Logout</span>
-           <i className="fa-solid fa-right-from-bracket"></i>
-         </button>
-      </header>
-      
-      <main className="flex-1 pb-24">
-        {activeTab === 'dashboard' && <Dashboard user={session.user} />}
-        {activeTab === 'myFarm' && <MyFarm session={session} />}
-      </main>
+     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-green-50" style={{backgroundImage: "url('/images/hero-bg.jpg')", backgroundSize: 'cover'}}>
+      <div className="absolute inset-0 bg-black opacity-60"></div>
+      <div className="relative z-10 w-full max-w-md p-8 space-y-4 shadow-2xl bg-white/90 backdrop-blur-sm rounded-2xl">
+        <div className="text-center">
+            <Link to="/" className="text-3xl font-bold text-green-800">🌾 AgroPulse</Link>
+            <p className="mt-2 font-medium text-gray-700">
+              {isSignUp ? 'Create your account to begin' : 'Welcome back, Farmer!'}
+            </p>
+        </div>
+        
+        {/* Error Display */}
+        {error && (
+            <div className="px-4 py-3 text-center text-red-700 bg-red-100 border border-red-400 rounded-lg">
+                <p>{error}</p>
+            </div>
+        )}
 
-      <div className="fixed z-20 bottom-20 right-5">
-        <button onClick={handleHelp} className="flex items-center justify-center w-16 h-16 text-3xl text-white bg-blue-500 rounded-full shadow-lg hover:bg-blue-600">
-            <i className="fa-solid fa-microphone"></i>
-        </button>
-      </div>
-
-      <nav className="fixed bottom-0 left-0 w-full bg-white shadow-[0_-2px_5px_rgba(0,0,0,0.1)] p-2">
-         <div className="flex items-center justify-around">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex flex-col items-center transition-colors w-24 h-16 justify-center ${activeTab === 'dashboard' ? 'text-green-500' : 'text-gray-500'}`}>
-            <i className="mb-1 text-2xl fa-solid fa-chart-line"></i>
-            <span className="text-xs font-bold">{t('dashboard')}</span>
+        <form onSubmit={handleAuthAction} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-bold text-gray-700">Email</label>
+            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 mt-1 transition border-2 border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="you@email.com"/>
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-bold text-gray-700">Password</label>
+            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full p-3 mt-1 transition border-2 border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" placeholder="••••••••"/>
+          </div>
+          <button type="submit" disabled={loading} className="w-full py-3 font-semibold text-white transition transform bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 hover:scale-105">
+            {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Login')}
           </button>
-          <button onClick={() => setActiveTab('myFarm')} className={`flex flex-col items-center transition-colors w-24 h-16 justify-center ${activeTab === 'myFarm' ? 'text-green-500' : 'text-gray-500'}`}>
-            <i className="mb-1 text-2xl fa-solid fa-seedling"></i>
-            <span className="text-xs font-bold">{t('myFarm')}</span>
+        </form>
+        <div className="text-center">
+          <button onClick={() => { setIsSignUp(!isSignUp); setError(''); }} className="text-sm font-medium text-green-700 hover:underline">
+            {isSignUp ? 'Already have an account? Login' : "New here? Create an Account"}
           </button>
         </div>
-      </nav>
+      </div>
     </div>
   );
 };
 
-export default AppLayout;
+export default AuthPage;

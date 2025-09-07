@@ -1,13 +1,15 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = ({ session, children }) => {
+  const location = useLocation();
+
   if (!session) {
-    // If no user is logged in, redirect them to the login page
-    return <Navigate to="/login" replace />;
+    // Redirect them to the /auth page, but save the current location they were
+    // trying to go to. This allows us to send them back after login.
+    return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // If a user is logged in, show the page content
   return children;
 };
 
