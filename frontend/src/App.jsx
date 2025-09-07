@@ -1,38 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import Login from './components/Login';
-import Layout from './components/Layout';
+import { Routes, Route } from 'react-router-dom';
+import { supabase } from './supabaseClient';
+
+import LandingPage from './pages/LandingPage';
+import AuthPage from './pages/AuthPage';
+import AppLayout from './pages/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  // Try to get user from localStorage first for offline persistence
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('userData')));
-  const [pin, setPin] = useState(() => localStorage.getItem('userPin'));
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = (userPin, userData) => {
-    // Save to state
-    setPin(userPin);
-    setUser(userData);
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
     
-    // Save to localStorage
-    localStorage.setItem('userPin', userPin);
-    localStorage.setItem('userData', JSON.stringify(userData));
-  };
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setLoading(false);
+    });
 
-  const handleLogout = () => {
-    // Clear state
-    setUser(null);
-    setPin(null);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    // Clear localStorage
-    localStorage.removeItem('userPin');
-    localStorage.removeItem('userData');
-  };
+  if (loading) {
+      return <div></div>; // Return a blank div or a spinner while checking session
+  }
 
-  // If there is no user, show the Login component.
-  // Otherwise, show the main Layout of the app.
   return (
-    user 
-      ? <Layout user={user} pin={pin} onLogout={handleLogout} /> 
-      : <Login onLogin={handleLogin} />
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<AuthPage />} />
+      <Route 
+        path="/app" 
+        element={
+          <ProtectedRoute session={session}>
+            <AppLayout session={session} />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
   );
 }
 
